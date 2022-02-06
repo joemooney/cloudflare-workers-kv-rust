@@ -1,22 +1,12 @@
 name = "workers-kv-from-rust"
-type = "javascript"
+type = "rust"
+account_id = ""
 workers_dev = true
 compatibility_date = "2022-01-16"
+route = ""
+zone_id = ""
 
-[vars]
-WORKERS_RS_VERSION = "0.0.7"
+kv_namespaces = [ 
+         { binding = "KV_FROM_RUST", id = "0e9c89d835a04fde8e7ab23159421da5", preview_id = "9afc93a8caa747258843dc6b9fe6fd3c" }
+]
 
-[build]
-command = "cargo install -q worker-build && worker-build --release" # required
-
-[build.upload]
-dir    = "build/worker"
-format = "modules"
-main   = "./shim.mjs"
-
-[[build.upload.rules]]
-globs = ["**/*.wasm"]
-type  = "CompiledWasm"
-
-# read more about configuring your Worker via wrangler.toml at:
-# https://developers.cloudflare.com/workers/cli-wrangler/configuration

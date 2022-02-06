@@ -1,55 +1,124 @@
-use serde_json::json;
-use worker::*;
+extern crate cfg_if;
+extern crate wasm_bindgen;
 
 mod utils;
 
-fn log_request(req: &Request) {
-    console_log!(
-        "{} - [{}], located at: {:?}, within: {}",
-        Date::now().to_string(),
-        req.path(),
-        req.cf().coordinates().unwrap_or_default(),
-        req.cf().region().unwrap_or("unknown region".into())
-    );
+use cfg_if::cfg_if;
+use js_sys::{ArrayBuffer, Object, Reflect, Uint8Array};
+use wasm_bindgen::{prelude::*, JsCast};
+use web_sys::{Request, Response, ResponseInit};
+
+cfg_if! {
+    // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+    // allocator.
+    if #[cfg(feature = "wee_alloc")] {
+        extern crate wee_alloc;
+        #[global_allocator]
+        static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+    }
 }
 
-#[event(fetch)]
-pub async fn main(req: Request, env: Env) -> Result<Response> {
-    log_request(&req);
+#[wasm_bindgen]
+pub async fn handle(kv: WorkersKvJs, req: JsValue) -> Result<Response, JsValue> {
+    let req: Request = req.dyn_into()?;
+    let url = web_sys::Url::new(&req.url())?;
+    let pathname = url.pathname();
+    let query_params = url.search_params();
+    let kv = WorkersKv { kv };
+    match req.method().as_str() {
+        "GET" => {
+            let value = kv.get_text(&pathname).await?.unwrap_or_default();
+            let mut init = ResponseInit::new();
+            init.status(200);
+            Response::new_with_opt_str_and_init(Some(&format!("\"{}\"\n", value)), &init)
+        }
+        "PUT" => {
+            let value = query_params.get("value").unwrap_or_default();
+            // set a TTL of 60 seconds:
+            kv.put_text(&pathname, &value, 60).await?;
+            let mut init = ResponseInit::new();
+            init.status(200);
+            Response::new_with_opt_str_and_init(None, &init)
+        }
+        _ => {
+            let mut init = ResponseInit::new();
+            init.status(400);
+            Response::new_with_opt_str_and_init(None, &init)
+        }
+    }
+}
 
-    // Optionally, get more helpful error messages written to the console in the case of a panic.
-    utils::set_panic_hook();
+#[wasm_bindgen]
+extern "C" {
+    pub type WorkersKvJs;
 
-    // Optionally, use the Router to handle matching endpoints, use ":name" placeholders, or "*name"
-    // catch-alls to match on specific patterns. Alternatively, use `Router::with_data(D)` to
-    // provide arbitrary data that will be accessible in each route via the `ctx.data()` method.
-    let router = Router::new();
+    #[wasm_bindgen(structural, method, catch)]
+    pub async fn put(
+        this: &WorkersKvJs,
+        k: JsValue,
+        v: JsValue,
+        options: JsValue,
+    ) -> Result<JsValue, JsValue>;
 
-    // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
-    // functionality and a `RouteContext` which you can use to  and get route parameters and
-    // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
-    router
-        .get("/", |_, _| Response::ok("Hello from Workers!"))
-        .post_async("/form/:field", |mut req, ctx| async move {
-            if let Some(name) = ctx.param("field") {
-                let form = req.form_data().await?;
-                match form.get(name) {
-                    Some(FormEntry::Field(value)) => {
-                        return Response::from_json(&json!({ name: value }))
-                    }
-                    Some(FormEntry::File(_)) => {
-                        return Response::error("`field` param in form shouldn't be a File", 422);
-                    }
-                    None => return Response::error("Bad Request", 400),
-                }
-            }
+    #[wasm_bindgen(structural, method, catch)]
+    pub async fn get(
+        this: &WorkersKvJs,
+        key: JsValue,
+        options: JsValue,
+    ) -> Result<JsValue, JsValue>;
+}
 
-            Response::error("Bad Request", 400)
-        })
-        .get("/worker-version", |_, ctx| {
-            let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
-            Response::ok(version)
-        })
-        .run(req, env)
-        .await
+struct WorkersKv {
+    kv: WorkersKvJs,
+}
+
+impl WorkersKv {
+    async fn put_text(&self, key: &str, value: &str, expiration_ttl: u64) -> Result<(), JsValue> {
+        let options = Object::new();
+        Reflect::set(&options, &"expirationTtl".into(), &(expiration_ttl as f64).into())?;
+        self.kv
+            .put(JsValue::from_str(key), value.into(), options.into())
+            .await?;
+        Ok(())
+    }
+
+    async fn put_vec(&self, key: &str, value: &[u8], expiration_ttl: u64) -> Result<(), JsValue> {
+        let options = Object::new();
+        Reflect::set(&options, &"expirationTtl".into(), &(expiration_ttl as f64).into())?;
+        let typed_array = Uint8Array::new_with_length(value.len() as u32);
+        typed_array.copy_from(value);
+        self.kv
+            .put(
+                JsValue::from_str(key),
+                typed_array.buffer().into(),
+                options.into(),
+            )
+            .await?;
+        Ok(())
+    }
+
+    async fn get_text(&self, key: &str) -> Result<Option<String>, JsValue> {
+        let options = Object::new();
+        Reflect::set(&options, &"type".into(), &"text".into())?;
+        Ok(self
+            .kv
+            .get(JsValue::from_str(key), options.into())
+            .await?
+            .as_string())
+    }
+
+    async fn get_vec(&self, key: &str) -> Result<Option<Vec<u8>>, JsValue> {
+        let options = Object::new();
+        Reflect::set(&options, &"type".into(), &"arrayBuffer".into())?;
+        let value = self.kv.get(JsValue::from_str(key), options.into()).await?;
+        if value.is_null() {
+            Ok(None)
+        } else {
+            let buffer = ArrayBuffer::from(value);
+            let typed_array = Uint8Array::new_with_byte_offset(&buffer, 0);
+            let mut v = vec![0; typed_array.length() as usize];
+            typed_array.copy_to(v.as_mut_slice());
+            Ok(Some(v))
+        }
+    }
 }

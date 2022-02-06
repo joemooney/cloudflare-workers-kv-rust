@@ -1,4 +1,6 @@
 /target
 **/*.rs.bk
+bin/
+pkg/
 wasm-pack.log
-build/
+worker/generated/

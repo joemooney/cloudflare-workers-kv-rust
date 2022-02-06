@@ -1,17 +1,36 @@
-# Getting Started
+# A Simple cloud-based Key-Value Database
+
+<sub>last updated Feb 6, 2022</sub>
+
+Create a KV store hosted on cloudflare (for free, up to transactions 100K or thereabouts a month!).
+
+Follow [this tutorial](https://developers.cloudflare.com/workers/tutorials/workers-kv-from-rust)
+
+## Goal
+
+Provide simple set/get endpoints:
+
+* `curl -X PUT 'localhost:8787/foo?value=bar'`
+* `curl 'localhost:8787/foo'` return "bar"
+
+1. `wrangler build`
+2. `wrangler dev`  (now you can use the localhost 8787 endpoints)
+3. `wrangler publish`  (now anyone can use the published endpoints: `https://workers-kv-from-rust.joemooney.workers.dev/foo`
+
+## Getting Started
 
 A template for kick starting a Cloudflare worker project using [`workers-rs`](https://github.com/cloudflare/workers-rs).
 
-This template is designed for compiling Rust to WebAssembly and publishing the resulting worker to 
+This template is designed for compiling Rust to WebAssembly and publishing the resulting worker to
 Cloudflare's [edge infrastructure](https://www.cloudflare.com/network/).
 
-## Usage 
+## Usage
 
 This template starts you off with a `src/lib.rs` file, acting as an entrypoint for requests hitting
 your Worker. Feel free to add more code in this file, or create Rust modules anywhere else for this
-project to use. 
+project to use.
 
-With `wrangler`, you can build, test, and deploy your Worker with the following commands: 
+With `wrangler`, you can build, test, and deploy your Worker with the following commands:
 
 ```bash
 # compiles your project to WebAssembly and will warn of any issues
@@ -38,4 +57,3 @@ Read more about this on the [`workers-rs` project README](https://github.com/clo
 
 If you have any problems with the `worker` crate, please open an issue on the upstream project 
 issue tracker on the [`workers-rs` repository](https://github.com/cloudflare/workers-rs).
-
