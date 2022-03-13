@@ -12,6 +12,7 @@ Provide simple set/get endpoints:
 
 * `curl -X PUT 'localhost:8787/foo?value=bar'`
 * `curl 'localhost:8787/foo'` return "bar"
+* `curl --header "Content-Type: Application/jsoN" -X POST 'localhost:8787/foo?value=bar' -d '{"product_id": 123456, "quantitY": 100}'`
 
 1. `wrangler build`
 2. `wrangler dev`  (now you can use the localhost 8787 endpoints)

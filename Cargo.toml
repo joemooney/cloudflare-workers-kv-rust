@@ -11,8 +11,13 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
+# serde JsValue <=> Rust struct
+# https://rustwasm.github.io/docs/wasm-bindgen/reference/arbitrary-data-with-serde.html
+serde = { version = "1.0", features = ["derive"]}
+serde_json = "1.0"
+
 cfg-if = "0.1.2"
-wasm-bindgen = "0.2.78"
+wasm-bindgen = { version = "0.2.78", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 
@@ -30,6 +35,7 @@ wee_alloc = { version = "0.4.2", optional = true }
 [dependencies.web-sys]
 version = "0.3"
 features = [
+    'Headers',
     'Request',
     'Response',
     'ResponseInit',
