@@ -8,11 +8,12 @@ Follow [this tutorial](https://developers.cloudflare.com/workers/tutorials/worke
 
 ## Goal
 
-Provide simple set/get endpoints:
+Provide simple set/get endpoints to update valies in a key/value store:
 
 * `curl -X PUT 'localhost:8787/foo?value=bar'`
 * `curl 'localhost:8787/foo'` return "bar"
 * `curl --header "Content-Type: Application/jsoN" -X POST 'localhost:8787/foo?value=bar' -d '{"product_id": 123456, "quantitY": 100}'`
+# `curl -X GET localhost:8787/datum/3`
 
 1. `wrangler build`
 2. `wrangler dev`  (now you can use the localhost 8787 endpoints)
@@ -58,3 +59,7 @@ Read more about this on the [`workers-rs` project README](https://github.com/clo
 
 If you have any problems with the `worker` crate, please open an issue on the upstream project
 issue tracker on the [`workers-rs` repository](https://github.com/cloudflare/workers-rs).
+
+## Production
+
+`https://workers-kv-from-rust.joemooney.workers.dev`
