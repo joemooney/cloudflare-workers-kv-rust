@@ -127,7 +127,7 @@ impl KvDB {
         info!("store kv {}", &value);
         // store KeyValue
         self.put_text(&format!("/kv/{}", kv.key), &value, expiration).await?;
-        return_ok()
+        return_ok(None)
     }
 
 }

@@ -22,10 +22,10 @@ cfg_if! {
     }
 }
 
-pub fn return_ok() -> Result<Response, JsValue> {
+pub fn return_ok(body: Option<&str>) -> Result<Response, JsValue> {
     let mut init = ResponseInit::new();
     init.status(200);
-    Response::new_with_opt_str_and_init(None, &init)
+    Response::new_with_opt_str_and_init(body, &init)
 }
 
 pub fn return_status(status: u16, msg: &str) -> Result<Response, JsValue> {

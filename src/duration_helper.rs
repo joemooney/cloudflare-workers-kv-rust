@@ -87,6 +87,16 @@ impl DurationHelper {
         Ok(())
     }
     /// Convert a string into a number of seconds
+    /// we add the interval, e.g
+    /// For example
+    /// 1y,1yr,1year -> seconds in a 52 weeks (hardcoded, good enough)
+    /// 1month,2mon  -> 30 days in seconds (hardcoded, good enough)
+    /// 1yr1d1h -> 1 year(approx), 25 hours in seconds
+    /// 1day -> return number of seconds in a day 24*60*60
+    /// 2days,2day,2d  -> 2 days in seconds
+    /// 2min,2m  -> 2 minutes in seconds
+    /// 3weeks,3wk,3k  -> 3 weeks in seconds
+    /// 2seconds,2sec,2s  -> 2 seconds
     pub fn convert(duration: &str) -> Result<i64, String> {
         let mut t = DurationHelper{ duration: Duration::zero(), spec: duration.to_owned(), count: 0, unit: TimeUnit::Second, current_unit: "".to_owned() };
         t.calc()?;

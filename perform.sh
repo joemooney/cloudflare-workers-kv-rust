@@ -24,13 +24,14 @@ get()
     rc=$?
     case $rc in
     0) 
-        if [ "$json" = '""' ]; then
+        if [ "$json" = "" ]; then
             echo "[fail] not found kv:$1";
         else
             echo "[pass] get $*";
             # json=$(curl -s -X GET $URL/kv/$1)
             # we need to unescape into a json string that jq will parse
-            eval echo $json | jq .
+            # echo $json | od -c
+            echo $json | sed 's,^",,;s,"$,,;s,\\",",g' | jq .
         fi
     ;;
     7) 
@@ -40,17 +41,22 @@ get()
     *) echo '[fail] get';;
     esac
 }
-kv() { 
-    printf "{ \"key\": $1, \"value\": \"$(echo $2 | sed 's,",\\\\\",g')\" }"; 
-}
+
+# kv <key> <value>
+#    - escape double quotes in the value
+#    - return a JSON string for the key/value
+kv() { printf "{ \"key\": $1, \"value\": \"$(echo $2 | sed 's,",\\\\\",g')\" }"; }
+#kv() { printf "{ \"key\": $1, \"value\": \"$2\" }"; }
+value() { echo "{ \"title\": \"$1\", \"body\": \"$2\" } }"; }
 
 load() {
-    kv1=$(kv 1 '{ "title":"title1", "body":"loren ipsum" }')
-    kv2=$(kv 2 '{ "title":"title2", "body":"loren ipsum" }')
-    kv3=$(kv 3 '{ "title":"title3", "body":"loren ipsum" }')
-    put "$kv1"
-    put "$kv2"
-    put "$kv3"
+
+    loren="foo"
+    # Create a KeyValue JSON block that we can 
+    put "$(kv 1 '{ "title":"title1", "body":"$loren ipsum" }')"
+    put "$(kv 2 '{ "title":"title2", "body":"loren ipsum" }')"
+    put "$(kv 3 '{ "title":"title3", "body":"loren ipsum" }')"
+    put "$(kv 4 '{ "title":"title4", "body":"loren ipsum" }')"
 }
 
 usage() {

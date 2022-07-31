@@ -1,3 +1,6 @@
+// Functions for printing to the javascript 
+// Browser Debug Console
+
 use wasm_bindgen::{prelude::*};
 // use web_sys::{Response, ResponseInit};
 

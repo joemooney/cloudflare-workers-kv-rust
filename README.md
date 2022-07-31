@@ -64,7 +64,7 @@ modules used in Rust-based Workers projects have to compile to the `wasm32-unkno
 
 Read more about this on the [`workers-rs` project README](https://github.com/cloudflare/workers-rs).
 
-## Trouibleshooting Issues
+## Troubleshooting Issues
 
 If you have any problems with the `worker` crate, please open an issue on the upstream project
 issue tracker on the [`workers-rs` repository](https://github.com/cloudflare/workers-rs).
